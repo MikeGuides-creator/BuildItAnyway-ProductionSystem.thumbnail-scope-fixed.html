@@ -1,0 +1,2828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build It Anyway — Video Production System</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #e8e8e0; font-family: system-ui, sans-serif; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 2rem; margin-bottom: 0.25rem; color: #00c2a8; }
+  h2 { font-size: 1.2rem; margin-bottom: 0.75rem; color: #00c2a8; }
+  .card { background: #111; border: 1px solid #2a2a2a; border-radius: 16px; padding: 1.25rem; margin-bottom: 1.25rem; }
+  input, select, textarea { width: 100%; padding: 0.75rem; background: #1a1a1a; border: 1px solid #2a2a2a; color: #e8e8e0; border-radius: 8px; margin-bottom: 0.75rem; }
+  button { background: #1e1e1e; color: #00c2a8; border: 1px solid #00c2a8; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; margin: 0.25rem; }
+  button:hover { background: #00c2a8; color: #0a0a0a; }
+  .btn-primary { background: #00c2a8; color: #0a0a0a; font-weight: bold; }
+  .btn-large { width: 100%; padding: 0.8rem; font-size: 1rem; margin: 0.5rem 0; }
+  .btn-green { background: #4caf50; color: white; border-color: #4caf50; }
+  .btn-green:hover { background: #388e3c; }
+  .output-area { background: #111; border: 1px solid #2a2a2a; border-radius: 12px; padding: 1rem; margin-top: 1rem; min-height: 100px; }
+  .topic-item { background: #1a1a1a; padding: 0.75rem; margin: 0.5rem 0; border-radius: 8px; border-left: 3px solid #00c2a8; cursor: pointer; }
+  .topic-item:hover { background: #252525; transform: translateX(5px); }
+  .topic-day { font-weight: bold; color: #00c2a8; font-size: 0.8rem; }
+  .dashboard { display: none; margin-top: 1rem; }
+  .dashboard.visible { display: block; }
+  .column { display: inline-block; width: 23%; vertical-align: top; margin: 0.5rem; background: #1a1a1a; border-radius: 12px; padding: 0.5rem; }
+  .dashboard-card { background: #222; padding: 0.5rem; margin: 0.5rem 0; border-radius: 8px; font-size: 0.8rem; }
+  .stats { margin-bottom: 1rem; padding: 0.5rem; background: #1a1a1a; border-radius: 8px; }
+  .stats span { margin-right: 1rem; }
+  .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #00c2a8; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 0.5rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; justify-content: center; align-items: center; }
+  .modal-container { background: #0a0a0a; border: 1px solid #333; border-radius: 24px; padding: 1.5rem; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; }
+  .modal-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
+  .modal-tab { background: none; border: none; color: #888; cursor: pointer; padding: 0.5rem 1rem; }
+  .modal-tab.active { color: #00c2a8; border-bottom: 2px solid #00c2a8; }
+  .voice-status { margin: 1rem 0; padding: 0.5rem; background: #1a1a1a; border-radius: 8px; text-align: center; }
+  .recording-active { color: #ff6b35; animation: pulse 1s infinite; }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+  audio { width: 100%; margin: 0.5rem 0; }
+  .copy-btn { background: rgba(0,194,168,0.2); border-color: #00c2a8; padding: 0.2rem 0.5rem; font-size: 0.7rem; margin-left: 0.5rem; cursor: pointer; }
+  .notification { position: fixed; bottom: 20px; right: 20px; background: #00c2a8; color: #0a0a0a; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 20000; animation: fadeOut 2s ease forwards; }
+  @keyframes fadeOut { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+  .button-group { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0; }
+  .filename-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
+  .filename-row input { flex: 1; margin: 0; }
+  .title-card { background: #1a1a1a; padding: 0.75rem; margin: 0.5rem 0; border-radius: 8px; border-left: 2px solid #00c2a8; }
+  .title-text { font-weight: bold; margin-bottom: 0.25rem; }
+  .title-meta { display: flex; gap: 1rem; font-size: 0.7rem; color: #888; margin-top: 0.5rem; flex-wrap: wrap; }
+  .ctr-badge { background: rgba(0,194,168,0.15); color: #00c2a8; padding: 0.15rem 0.4rem; border-radius: 4px; }
+  .calendar-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; justify-content: center; align-items: center; }
+  .calendar-container { background: #0a0a0a; border: 1px solid #333; border-radius: 24px; padding: 1.5rem; width: 95%; max-width: 1000px; max-height: 85vh; overflow-y: auto; }
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+  .calendar-nav { display: flex; gap: 0.5rem; align-items: center; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 1rem; }
+  .calendar-day-header { text-align: center; padding: 0.5rem; font-weight: bold; color: #00c2a8; background: #1a1a1a; border-radius: 8px; }
+  .calendar-day { background: #111; border: 1px solid #2a2a2a; border-radius: 8px; min-height: 100px; padding: 0.5rem; }
+  .calendar-day.empty { background: transparent; border-color: transparent; }
+  .day-number { font-size: 0.8rem; font-weight: bold; margin-bottom: 0.5rem; }
+  .day-number.today { color: #00c2a8; }
+  .schedule-item { background: rgba(0,194,168,0.1); border-left: 2px solid #00c2a8; padding: 0.25rem; margin-bottom: 0.25rem; font-size: 0.65rem; cursor: pointer; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .schedule-item:hover { background: rgba(0,194,168,0.2); }
+  .add-schedule-btn { background: none; border: none; color: #888; font-size: 0.7rem; cursor: pointer; width: 100%; text-align: center; margin-top: 0.25rem; }
+  .add-schedule-btn:hover { color: #00c2a8; }
+  .upcoming-list { margin-top: 1rem; padding: 1rem; background: #111; border-radius: 12px; }
+  .upcoming-item { background: #1a1a1a; padding: 0.5rem; margin: 0.5rem 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+  .platform-badge { background: rgba(0,194,168,0.2); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.65rem; margin-left: 0.25rem; white-space: nowrap; }
+  .platform-group { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin: 1rem 0; }
+  .platform-checkbox { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem; }
+  .platform-checkbox input { width: auto; margin: 0; }
+
+  /* ===================== NEW: SCRIPT IMPORT STYLES ===================== */
+  .drop-zone {
+    border: 2px dashed #00c2a8;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(0,194,168,0.03);
+    margin-bottom: 1rem;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    background: rgba(0,194,168,0.08);
+    border-color: #fff;
+  }
+  .drop-zone-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .drop-zone-text { color: #00c2a8; font-size: 1rem; font-weight: bold; margin-bottom: 0.25rem; }
+  .drop-zone-sub { color: #888; font-size: 0.8rem; }
+  .imported-script-preview {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-left: 3px solid #00c2a8;
+    display: none;
+  }
+  .imported-script-title {
+    color: #00c2a8;
+    font-weight: bold;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .imported-script-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .import-stat {
+    background: rgba(0,194,168,0.1);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #00c2a8;
+  }
+  .imported-vo-text {
+    background: #111;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.85rem;
+    color: #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+  }
+  .import-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  /* ===================== NEW: PLATFORM PACKAGE STYLES ===================== */
+  .platform-package-card {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 0.75rem 0;
+    border-left: 3px solid #4caf50;
+  }
+  .platform-package-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .platform-package-name {
+    font-weight: bold;
+    font-size: 1rem;
+    color: #00c2a8;
+  }
+  .platform-package-content {
+    background: #111;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.82rem;
+    color: #ccc;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    max-height: 120px;
+    overflow-y: auto;
+    margin-bottom: 0.5rem;
+  }
+  .package-copy-btn {
+    background: rgba(76,175,80,0.2);
+    border: 1px solid #4caf50;
+    color: #4caf50;
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .package-copy-btn:hover { background: #4caf50; color: white; }
+  .new-badge {
+    background: #00c2a8;
+    color: #0a0a0a;
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+  .version-tag {
+    font-size: 0.75rem;
+    color: #4caf50;
+    margin-left: 0.5rem;
+    font-weight: normal;
+  }
+  
+  #controlPanel {
+  padding: 1rem;
+  background: #050505;
+  color: #f5f5f5;
+}
+
+.cp-shell {
+  max-width: 1200px;
+  margin: 0 auto 1rem auto;
+  border: 1px solid rgba(0, 194, 168, 0.25);
+  border-radius: 24px;
+  padding: 1rem;
+  background: linear-gradient(135deg, #0a0a0a, #111);
+}
+
+.cp-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.cp-kicker {
+  color: #00c2a8;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cp-top h1 {
+  margin: 0.25rem 0;
+  color: #ffffff;
+}
+
+.cp-top p {
+  color: #aaa;
+  margin: 0;
+}
+
+.cp-today-card,
+.cp-card {
+  background: #111;
+  border: 1px solid #242424;
+  border-radius: 18px;
+  padding: 1rem;
+}
+
+.cp-today-card span,
+.cp-today-card small {
+  display: block;
+  color: #888;
+}
+
+.cp-today-card strong {
+  color: #00c2a8;
+}
+
+.cp-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+}
+
+.cp-card h2 {
+  margin-top: 0;
+  color: #00c2a8;
+  font-size: 1rem;
+}
+
+.cp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.cp-stats div,
+.cp-momentum div {
+  background: #1a1a1a;
+  border-radius: 14px;
+  padding: 0.8rem;
+}
+
+.cp-stats strong,
+.cp-momentum strong {
+  display: block;
+  font-size: 1.6rem;
+  color: #ffffff;
+}
+
+.cp-stats span,
+.cp-momentum span {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.cp-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.cp-actions button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #f5f5f5;
+  border-radius: 12px;
+  padding: 0.7rem;
+  cursor: pointer;
+}
+
+.cp-actions button:hover {
+  border-color: #00c2a8;
+  color: #00c2a8;
+}
+
+.cp-schedule-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid #222;
+  padding: 0.6rem 0;
+}
+
+.cp-schedule-item span,
+.cp-empty {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.cp-momentum {
+  display: grid;
+  gap: 0.5rem;
+}
+
+@media (max-width: 800px) {
+  .cp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cp-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Control Panel flash */
+#controlPanel.cp-flash {
+  animation: cpFlash 0.6s ease;
+}
+
+@keyframes cpFlash {
+  0%   { box-shadow: 0 0 0 rgba(0,194,168,0); }
+  30%  { box-shadow: 0 0 20px rgba(0,194,168,0.6); }
+  100% { box-shadow: 0 0 0 rgba(0,194,168,0); }
+}
+
+.cp-alert-good {
+  border-color: rgba(76, 175, 80, 0.7) !important;
+}
+
+.cp-alert-warn {
+  border-color: rgba(255, 193, 7, 0.8) !important;
+}
+
+.cp-alert-danger {
+  border-color: rgba(255, 107, 53, 0.9) !important;
+}
+
+.cp-alert-text-good {
+  color: #4caf50 !important;
+}
+
+.cp-alert-text-warn {
+  color: #ffc107 !important;
+}
+
+.cp-alert-text-danger {
+  color: #ff6b35 !important;
+}
+
+.console-shell {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: 18px;
+  background: #0b1220;
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.console-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.console-kicker {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.console-header h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+}
+
+.console-status {
+  font-size: 12px;
+  font-weight: 700;
+  color: #86efac;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 12px #22c55e;
+}
+
+.console-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.console-module {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.console-module h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.console-module button {
+  width: 100%;
+  margin: 6px 0;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: linear-gradient(180deg, #1e293b, #0f172a);
+  color: #e0f2fe;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.console-module button:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+}
+
+.console-output-wrap {
+  margin-top: 16px;
+}
+
+.console-output-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #facc15;
+  margin-bottom: 8px;
+}
+
+.console-output {
+  width: 100%;
+  min-height: 280px;
+  resize: vertical;
+  border-radius: 14px;
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  background: #020617;
+  color: #d1fae5;
+  padding: 14px;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 800px) {
+  .console-header,
+  .console-grid {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<h1>Build It Anyway <span class="version-tag">Video Production System</span></h1>
+<p style="color:#888; margin-bottom:1.5rem; font-size:0.85rem;">Follow the steps in order — import your script and go all the way to publish.</p>
+
+<div style="background:#111; border:1px solid #2a2a2a; border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.25rem;">
+  <div style="font-size:0.75rem; color:#00c2a8; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.75rem; font-weight:600;">Your Production Workflow</div>
+  <div style="display:flex; gap:0; align-items:center; flex-wrap:wrap; gap:0.25rem;">
+    <div style="background:rgba(0,194,168,0.15); border:1px solid rgba(0,194,168,0.3); color:#00c2a8; padding:0.3rem 0.75rem; border-radius:20px; font-size:0.75rem; white-space:nowrap;">1 Import Script</div>
+    <div style="color:#444; font-size:0.8rem; padding:0 0.25rem;">→</div>
+    <div style="background:rgba(0,194,168,0.15); border:1px solid rgba(0,194,168,0.3); color:#00c2a8; padding:0.3rem 0.75rem; border-radius:20px; font-size:0.75rem; white-space:nowrap;">2 Platform Package</div>
+    <div style="color:#444; font-size:0.8rem; padding:0 0.25rem;">→</div>
+    <div style="background:rgba(0,194,168,0.15); border:1px solid rgba(0,194,168,0.3); color:#00c2a8; padding:0.3rem 0.75rem; border-radius:20px; font-size:0.75rem; white-space:nowrap;">3 Voiceover</div>
+    <div style="color:#444; font-size:0.8rem; padding:0 0.25rem;">→</div>
+    <div style="background:rgba(0,194,168,0.15); border:1px solid rgba(0,194,168,0.3); color:#00c2a8; padding:0.3rem 0.75rem; border-radius:20px; font-size:0.75rem; white-space:nowrap;">4 Thumbnails</div>
+    <div style="color:#444; font-size:0.8rem; padding:0 0.25rem;">→</div>
+    <div style="background:rgba(0,194,168,0.15); border:1px solid rgba(0,194,168,0.3); color:#00c2a8; padding:0.3rem 0.75rem; border-radius:20px; font-size:0.75rem; white-space:nowrap;">5 Schedule</div>
+    <div style="color:#444; font-size:0.8rem; padding:0 0.25rem;">→</div>
+    <div style="background:rgba(0,194,168,0.15); border:1px solid rgba(0,194,168,0.3); color:#00c2a8; padding:0.3rem 0.75rem; border-radius:20px; font-size:0.75rem; white-space:nowrap;">6 Publish</div>
+  </div>
+</div>
+
+
+<!-- API Keys -->
+<div class="card">
+  <h2>🔑 API Keys</h2>
+  <input type="password" id="apiKey" placeholder="OpenAI API Key (sk-...)">
+  <input type="password" id="elevenLabsKey" placeholder="ElevenLabs API Key">
+  <button id="saveKeyBtn" class="btn-primary">Save Keys</button>
+  <span id="keyStatus" style="margin-left: 0.5rem;"></span>
+</div>
+
+<!-- ===================== NEW: SCRIPT IMPORT CARD ===================== -->
+<div class="card">
+  <h2>Step 1 — 📥 Import Your Script</h2>
+  <p style="color:#888; font-size:0.85rem; margin-bottom:1rem;">Drag & drop any script HTML file — it automatically extracts the voiceover text, detects the episode, and loads it ready for production.</p>
+
+  <div class="drop-zone" id="scriptDropZone">
+    <div class="drop-zone-icon">📄</div>
+    <div class="drop-zone-text">Drop your script HTML file here</div>
+    <div class="drop-zone-sub">or click to browse · supports .html script files</div>
+    <input type="file" id="scriptFileInput" accept=".html" style="display:none;">
+  </div>
+
+  <div class="imported-script-preview" id="importedScriptPreview">
+    <div class="imported-script-title" id="importedScriptTitle">Episode Title</div>
+    <div class="imported-script-stats" id="importedScriptStats"></div>
+    <div class="imported-vo-text" id="importedVoText"></div>
+    <div class="import-actions">
+      <button id="importSendToVoiceBtn" class="btn-primary">🎙️ Send to Voice Studio</button>
+      <button id="importSendToPlatformBtn" class="btn-green">📦 Generate Platform Package</button>
+      <button id="importSaveToLibraryBtn">💾 Save to Asset Library</button>
+      <button id="importCopyVoBtn" class="copy-btn" style="font-size:0.8rem; padding:0.4rem 0.8rem;">Copy Voiceover Text</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== NEW: PLATFORM PACKAGE CARD ===================== -->
+<div class="card">
+  <h2>Step 2 — 📦 Generate Platform Package</h2>
+  <p style="color:#888; font-size:0.85rem; margin-bottom:1rem;">Paste your script or use an imported one — generates ready-to-paste content for every platform in one click.</p>
+  <textarea id="platformScriptInput" rows="5" placeholder="Paste your video script here, or use the Script Importer above to auto-fill this..."></textarea>
+  <input type="text" id="platformVideoTitle" placeholder="Video title (e.g. Week 2 Update: Is My $20 Already Gone?)">
+  <button id="generatePackageBtn" class="btn-primary btn-large">⚡ Generate Full Platform Package</button>
+  <div id="platformPackageOutput" style="display:none;"></div>
+</div>
+
+<!-- AI Topic Calendar -->
+<div class="card">
+  <h2>⚙️ AI Topic Calendar</h2>
+  <input type="text" id="calendarNiche" placeholder="Your niche (e.g., fitness, finance, AI)">
+  <button id="generateTopicsBtn" class="btn-primary">Generate 7 Topics</button>
+  <div id="calendarOutput" class="output-area" style="display: none;"></div>
+</div>
+
+<!-- Script Generator -->
+<div class="card">
+  <h2>⚙️ AI Script Generator</h2>
+  <input type="text" id="topic" placeholder="Video topic">
+  <select id="styleSelect">
+    <option value="educational">Educational / How-to</option>
+    <option value="list">List / Top X</option>
+    <option value="storytelling">Storytelling</option>
+    <option value="motivational">Motivational</option>
+  </select>
+  <button id="generateBtn" class="btn-primary">Generate Script</button>
+  <button id="viewAssetsBtn">View Asset Library</button>
+  <div id="scriptOutput" class="output-area" style="display: none;"></div>
+</div>
+
+<!-- Voice Studio -->
+<div class="card">
+  <h2>Step 3 — 🎙️ Generate Voiceover</h2>
+  <button id="openVoiceStudioBtn" class="btn-primary btn-large">OPEN VOICE STUDIO</button>
+  <div id="voiceOutput" class="output-area" style="display: none;"></div>
+</div>
+
+<!-- Thumbnail Studio -->
+<div class="card">
+  <h2>Step 4 — 🖼️ Generate Thumbnail Titles</h2>
+  <button id="openThumbnailBtn" class="btn-primary btn-large">OPEN THUMBNAIL STUDIO</button>
+  <div id="thumbnailOutput" class="output-area" style="display: none;"></div>
+</div>
+
+<div style="border-top:1px solid #2a2a2a; margin:1.5rem 0; padding-top:0.5rem;"><p style="color:#555; font-size:0.8rem; letter-spacing:0.1em; text-transform:uppercase;">Additional Tools</p></div>
+<div id="assetOutput" class="output-area" style="display: none;"></div>
+
+<div class="button-group">
+  <button id="dashboardBtn" class="btn-primary btn-large">Step 5 — 📊 Open Dashboard</button>
+  <button id="calendarBtn" class="btn-primary btn-large">Step 6 — 📅 Open Scheduling Calendar</button>
+  <button id="timerBtn" class="btn-primary btn-large">⏱️ Open Production Timer</button>
+</div>
+
+<div id="dashboardContainer" class="dashboard" style="display:none;">
+  <div class="stats" id="statsArea"></div>
+  <div id="columnsArea"></div>
+</div>
+
+<script>
+
+  // ============================================================
+  // DATA STORES & INIT
+  // ============================================================
+  let assets = { scripts: [] };
+  let schedules = { items: [] };
+  let savedTemplates = { titles: [] };
+  let openAIKey = localStorage.getItem('openai_api_key') || '';
+  let elevenLabsKey = localStorage.getItem('elevenlabs_api_key') || '';
+  let productionData = { sessions: [], streak: 0, longestStreak: 0, lastPostDate: null };
+  let importedVoiceoverText = '';
+  let importedEpisodeTitle = '';
+  let latestGeneratedScript = '';
+
+  const PLATFORMS = [
+    { id: 'youtube', name: 'YouTube', emoji: '▶️' },
+    { id: 'tiktok', name: 'TikTok', emoji: '🎵' },
+    { id: 'instagram', name: 'Instagram', emoji: '📸' },
+    { id: 'facebook', name: 'Facebook', emoji: '👍' },
+    { id: 'reddit', name: 'Reddit', emoji: '🤖' },
+    { id: 'twitter', name: 'Twitter/X', emoji: '🐦' },
+    { id: 'linkedin', name: 'LinkedIn', emoji: '💼' },
+    { id: 'pinterest', name: 'Pinterest', emoji: '📌' },
+    { id: 'snapchat', name: 'Snapchat', emoji: '👻' }
+  ];
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function showNotification(message) {
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    setTimeout(function() { notif.remove(); }, 2000);
+  }
+
+  window.copyToClipboard = function(text) {
+    navigator.clipboard.writeText(text).then(function() {
+      showNotification('Copied to clipboard!');
+    }).catch(function() {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showNotification('Copied to clipboard!');
+    });
+  };
+
+  function saveAssets() { localStorage.setItem('facelessAssets', JSON.stringify(assets)); }
+  function loadAssets() {
+    const saved = localStorage.getItem('facelessAssets');
+    if (saved) assets = JSON.parse(saved);
+    updateKeyStatus();
+  }
+  function loadTemplates() {
+    const saved = localStorage.getItem('thumbnailTemplates');
+    if (saved) savedTemplates = JSON.parse(saved);
+  }
+  function saveTemplates() { localStorage.setItem('thumbnailTemplates', JSON.stringify(savedTemplates)); }
+  function saveSchedules() { localStorage.setItem('facelessSchedules', JSON.stringify(schedules)); }
+  function loadSchedules() {
+    const saved = localStorage.getItem('facelessSchedules');
+    if (saved) schedules = JSON.parse(saved);
+  }
+  function loadProductionData() {
+    const saved = localStorage.getItem('facelessProduction');
+    if (saved) productionData = JSON.parse(saved);
+  }
+  function saveProductionData() { localStorage.setItem('facelessProduction', JSON.stringify(productionData)); }
+
+  function recordPublishedVideo() {
+    const today = new Date().toISOString().split('T')[0];
+    if (productionData.lastPostDate === today) return;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    if (productionData.lastPostDate === yesterdayStr) productionData.streak++;
+    else productionData.streak = 1;
+    if (productionData.streak > productionData.longestStreak) productionData.longestStreak = productionData.streak;
+    productionData.lastPostDate = today;
+    saveProductionData();
+    showNotification(productionData.streak + '-day streak!');
+  }
+
+  function updateKeyStatus() {
+    const status = document.getElementById('keyStatus');
+    let msg = '';
+    if (openAIKey && openAIKey.startsWith('sk-')) msg += 'OpenAI ✓ ';
+    if (elevenLabsKey && elevenLabsKey.length > 5) msg += 'ElevenLabs ✓';
+    status.innerHTML = msg || '<span style="color:#ff6b35;">No keys saved</span>';
+  }
+
+  document.getElementById('saveKeyBtn').addEventListener('click', function() {
+    const openAIInput = document.getElementById('apiKey');
+    const elevenInput = document.getElementById('elevenLabsKey');
+    let newOpenAI = openAIInput.value.trim();
+    let newEleven = elevenInput.value.trim();
+    if (newOpenAI && newOpenAI.startsWith('sk-')) {
+      openAIKey = newOpenAI;
+      localStorage.setItem('openai_api_key', newOpenAI);
+      openAIInput.value = '********';
+    }
+    if (newEleven && newEleven.length > 5) {
+      elevenLabsKey = newEleven;
+      localStorage.setItem('elevenlabs_api_key', newEleven);
+      elevenInput.value = '********';
+    }
+    updateKeyStatus();
+    showNotification('Keys saved!');
+  });
+
+  // ============================================================
+  // NEW FEATURE 1: SCRIPT IMPORTER
+  // ============================================================
+  function extractVoiceoverFromHTML(htmlString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+
+    // Extract episode title from hero h1
+    let title = '';
+    const heroH1 = doc.querySelector('.hero h1');
+    if (heroH1) title = heroH1.textContent.replace(/\s+/g, ' ').trim();
+    if (!title) {
+      const titleEl = doc.querySelector('title');
+      if (titleEl) title = titleEl.textContent.trim();
+    }
+
+    // Extract all VOICE blocks — look for elements after badge-voiceover labels
+    let voiceLines = [];
+    const scriptBlocks = doc.querySelectorAll('.script-block.vo .block-content');
+    scriptBlocks.forEach(function(el) {
+      const text = el.textContent.replace(/\s+/g, ' ').trim();
+      if (text) voiceLines.push(text);
+    });
+
+    // Also grab highlight blocks
+    const highlights = doc.querySelectorAll('.highlight');
+    highlights.forEach(function(el) {
+      const text = el.textContent.replace(/\s+/g, ' ').trim();
+      if (text) voiceLines.push(text);
+    });
+
+    // Count sections
+    const sections = doc.querySelectorAll('.section');
+
+    return {
+      title: title,
+      voiceover: voiceLines.join('\n\n'),
+      wordCount: voiceLines.join(' ').split(/\s+/).length,
+      sectionCount: sections.length,
+      estimatedMinutes: Math.round(voiceLines.join(' ').split(/\s+/).length / 130)
+    };
+  }
+
+  function handleScriptFile(file) {
+    if (!file || !file.name.endsWith('.html')) {
+      showNotification('Please drop an HTML script file');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const htmlContent = e.target.result;
+      const extracted = extractVoiceoverFromHTML(htmlContent);
+
+      if (!extracted.voiceover || extracted.voiceover.length < 50) {
+        showNotification('Could not extract voiceover — is this a script file?');
+        return;
+      }
+
+      importedVoiceoverText = extracted.voiceover;
+      importedEpisodeTitle = extracted.title;
+
+      // Show preview
+      const preview = document.getElementById('importedScriptPreview');
+      document.getElementById('importedScriptTitle').textContent = extracted.title || file.name;
+      document.getElementById('importedScriptStats').innerHTML =
+        '<span class="import-stat">📝 ' + extracted.wordCount + ' words</span>' +
+        '<span class="import-stat">⏱️ ~' + extracted.estimatedMinutes + ' min</span>' +
+        '<span class="import-stat">📋 ' + extracted.sectionCount + ' sections</span>' +
+        '<span class="import-stat">📄 ' + file.name + '</span>';
+      document.getElementById('importedVoText').textContent = extracted.voiceover;
+      preview.style.display = 'block';
+
+      // Auto-fill platform script input
+      document.getElementById('platformScriptInput').value = extracted.voiceover;
+      document.getElementById('platformVideoTitle').value = extracted.title;
+
+      showNotification('Script imported successfully!');
+    };
+    reader.readAsText(file);
+  }
+
+  // Drop zone events
+  const dropZone = document.getElementById('scriptDropZone');
+  const fileInput = document.getElementById('scriptFileInput');
+
+  dropZone.addEventListener('click', function() { fileInput.click(); });
+  fileInput.addEventListener('change', function(e) {
+    if (e.target.files[0]) handleScriptFile(e.target.files[0]);
+  });
+  dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', function() {
+    dropZone.classList.remove('dragover');
+  });
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    handleScriptFile(file);
+  });
+
+  // Import action buttons
+  document.getElementById('importSendToVoiceBtn').addEventListener('click', function() {
+    if (!importedVoiceoverText) return;
+    localStorage.setItem('voiceoverScript', importedVoiceoverText);
+    openVoiceStudio();
+    showNotification('Script loaded into Voice Studio!');
+  });
+
+  document.getElementById('importSendToPlatformBtn').addEventListener('click', function() {
+    document.getElementById('platformScriptInput').value = importedVoiceoverText;
+    document.getElementById('platformVideoTitle').value = importedEpisodeTitle;
+    document.getElementById('generatePackageBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showNotification('Script loaded into Platform Generator!');
+  });
+
+  document.getElementById('importSaveToLibraryBtn').addEventListener('click', function() {
+    if (!importedVoiceoverText) return;
+    assets.scripts.unshift({
+      id: Date.now(),
+      topic: importedEpisodeTitle || 'Imported Script',
+      content: importedVoiceoverText,
+      style: 'imported',
+      status: 'draft',
+      date: new Date().toLocaleDateString()
+    });
+    saveAssets();
+	refreshControlPanel();
+    showNotification('Saved to Asset Library!');
+    renderDashboard();
+  });
+
+  document.getElementById('importCopyVoBtn').addEventListener('click', function() {
+    if (importedVoiceoverText) window.copyToClipboard(importedVoiceoverText);
+  });
+
+  // ============================================================
+  // NEW FEATURE 2: PLATFORM PACKAGE GENERATOR
+  // ============================================================
+  document.getElementById('generatePackageBtn').addEventListener('click', async function() {
+    const script = document.getElementById('platformScriptInput').value.trim();
+    const title = document.getElementById('platformVideoTitle').value.trim();
+    const output = document.getElementById('platformPackageOutput');
+
+    if (!script) { alert('Paste a script or import one first'); return; }
+    if (!openAIKey) { alert('Enter your OpenAI API key first'); return; }
+
+    output.style.display = 'block';
+    output.innerHTML = '<div style="text-align:center; padding:2rem;"><div class="loading"></div> Generating platform packages for all channels...</div>';
+
+    try {
+      const prompt = `You are a social media expert for a YouTube channel called "Twenty Dollar Investor" — a beginner investing channel by a regular guy learning the stock market. 
+
+Video title: "${title || 'Stock Market Update'}"
+Script summary: ${script.substring(0, 800)}
+
+Generate platform-optimized content in this EXACT JSON format (no markdown, just pure JSON):
+{
+  "youtube_title": "SEO-optimized YouTube title under 60 chars",
+  "youtube_description": "Full YouTube description 150-200 words with timestamps placeholder, keywords, and call to action. Include disclaimer: Not financial advice.",
+  "youtube_tags": "10-15 comma-separated tags",
+  "instagram_caption": "Engaging Instagram caption under 150 words with 10 relevant hashtags",
+  "tiktok_caption": "Punchy TikTok caption under 100 words with trending hashtags",
+  "facebook_post": "Conversational Facebook post 100-150 words encouraging discussion",
+  "twitter_post": "Punchy Twitter/X post under 280 characters with hashtags",
+  "thumbnail_text": "3-5 word bold thumbnail text that gets clicks"
+}`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + openAIKey },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 1200
+        })
+      });
+
+      const data = await response.json();
+      let rawContent = data.choices[0].message.content;
+      rawContent = rawContent.replace(/```json|```/g, '').trim();
+      const pkg = JSON.parse(rawContent);
+
+      const platforms = [
+        { key: 'youtube_title', label: '▶️ YouTube Title', emoji: '▶️' },
+        { key: 'youtube_description', label: '▶️ YouTube Description', emoji: '▶️' },
+        { key: 'youtube_tags', label: '🏷️ YouTube Tags', emoji: '🏷️' },
+        { key: 'thumbnail_text', label: '🖼️ Thumbnail Text', emoji: '🖼️' },
+        { key: 'instagram_caption', label: '📸 Instagram Caption', emoji: '📸' },
+        { key: 'tiktok_caption', label: '🎵 TikTok Caption', emoji: '🎵' },
+        { key: 'facebook_post', label: '👍 Facebook Post', emoji: '👍' },
+        { key: 'twitter_post', label: '🐦 Twitter / X Post', emoji: '🐦' }
+      ];
+
+      let html = '<div style="margin-bottom:1rem;"><strong style="color:#4caf50;">✅ Platform Package Ready — Copy & paste into each platform below:</strong></div>';
+
+      platforms.forEach(function(p) {
+        const content = pkg[p.key] || 'Not generated';
+        const escapedContent = content.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
+        html += '<div class="platform-package-card">' +
+          '<div class="platform-package-header">' +
+          '<div class="platform-package-name">' + p.label + '</div>' +
+          '<button class="package-copy-btn" onclick="window.copyToClipboard(\'' + escapedContent + '\')">Copy</button>' +
+          '</div>' +
+          '<div class="platform-package-content">' + escapeHtml(content) + '</div>' +
+          '</div>';
+      });
+
+      html += '<div style="margin-top:1rem; padding:0.75rem; background:#1a1a1a; border-radius:8px; font-size:0.8rem; color:#888;">' +
+        '💡 <strong style="color:#00c2a8;">Tip:</strong> Copy each section and paste directly into YouTube Studio, then your social media platforms. ' +
+        'Your thumbnail text is ready to use in Canva or any design tool.' +
+        '</div>';
+
+      output.innerHTML = html;
+      showNotification('Platform package generated!');
+
+    } catch(e) {
+      output.innerHTML = '<div style="color:#ff6b35; padding:1rem;">Error generating package: ' + e.message + '<br><small>Make sure your OpenAI key is saved and try again.</small></div>';
+    }
+  });
+
+  // ============================================================
+  // SCRIPT GENERATOR (original)
+  // ============================================================
+  async function generateScript() {
+    const topic = document.getElementById('topic').value.trim();
+    const style = document.getElementById('styleSelect').value;
+    const output = document.getElementById('scriptOutput');
+    if (!topic) { alert('Enter a topic'); return; }
+    if (!openAIKey) { alert('Enter OpenAI API key first'); return; }
+    output.innerHTML = '<div class="loading"></div> Generating...';
+    output.style.display = 'block';
+    try {
+      let promptText = '';
+      if (style === 'educational') promptText = 'Write a 60-second educational script about "' + topic + '". Start with a hook. End with CTA.';
+      else if (style === 'list') promptText = 'Write a 60-second list-style script about "' + topic + '". Format as "3 things about...".';
+      else if (style === 'storytelling') promptText = 'Write a 60-second storytelling script about "' + topic + '".';
+      else promptText = 'Write a 60-second motivational script about "' + topic + '".';
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + openAIKey },
+        body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [{ role: 'user', content: promptText }], max_tokens: 300 })
+      });
+      const data = await response.json();
+      const script = data.choices[0].message.content;
+      output.innerHTML = '<strong>Script:</strong><div style="white-space:pre-line; margin:1rem 0; background:#1a1a1a; padding:1rem; border-radius:8px;">' + escapeHtml(script) + '</div>' +
+        '<button id="saveScriptBtn">Save to Library</button>' +
+        '<button id="copyScriptBtn" class="copy-btn">Copy Script</button>' +
+        '<button id="useForVoiceBtn" class="copy-btn">Use for Voiceover</button>' +
+        '<button id="sendToPlatformBtn" class="copy-btn" style="background:rgba(76,175,80,0.2);border-color:#4caf50;color:#4caf50;">📦 Generate Platform Package</button>';
+
+      document.getElementById('saveScriptBtn').addEventListener('click', function() {
+        assets.scripts.unshift({ id: Date.now(), topic: topic, content: script, style: style, status: 'draft', date: new Date().toLocaleDateString() });
+        saveAssets();
+        showNotification('Script saved!');
+        renderDashboard();
+      });
+      document.getElementById('copyScriptBtn').addEventListener('click', function() { window.copyToClipboard(script); });
+      document.getElementById('useForVoiceBtn').addEventListener('click', function() {
+        localStorage.setItem('voiceoverScript', script);
+        openVoiceStudio();
+        showNotification('Script loaded into Voice Studio!');
+      });
+      // NEW: Send generated script to platform package generator
+      document.getElementById('sendToPlatformBtn').addEventListener('click', function() {
+        document.getElementById('platformScriptInput').value = script;
+        document.getElementById('platformVideoTitle').value = topic;
+        document.getElementById('generatePackageBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showNotification('Script sent to Platform Generator!');
+      });
+    } catch(e) {
+      output.innerHTML = '<div style="color:#ff6b35;">Error: ' + e.message + '</div>';
+    }
+  }
+  document.getElementById('generateBtn').addEventListener('click', generateScript);
+
+  // View Assets
+  function viewAssets() {
+    const output = document.getElementById('assetOutput');
+    if (assets.scripts.length === 0) {
+      output.innerHTML = '<div>No scripts saved yet.</div>';
+      output.style.display = 'block';
+      return;
+    }
+    let html = '<strong>Asset Library (' + assets.scripts.length + ' scripts)</strong>';
+    for (let i = 0; i < assets.scripts.length; i++) {
+      const s = assets.scripts[i];
+      html += '<div style="background:#1a1a1a; padding:0.75rem; margin:0.5rem 0; border-radius:8px;"><strong>' + escapeHtml(s.topic) + '</strong><br><span style="color:#888;">' + s.style + ' | ' + s.status + ' | ' + s.date + '</span></div>';
+    }
+    output.innerHTML = html;
+    output.style.display = 'block';
+  }
+  document.getElementById('viewAssetsBtn').addEventListener('click', viewAssets);
+
+  // Topic Calendar
+  async function generateTopics() {
+    const niche = document.getElementById('calendarNiche').value.trim();
+    const output = document.getElementById('calendarOutput');
+    if (!niche) { alert('Enter your niche'); return; }
+    if (!openAIKey) { alert('Enter OpenAI API key first'); return; }
+    output.innerHTML = '<div class="loading"></div> Generating topics...';
+    output.style.display = 'block';
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + openAIKey },
+        body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [{ role: 'user', content: 'Generate 7 video topics for a faceless channel about "' + niche + '". List one per line.' }], max_tokens: 200 })
+      });
+      const data = await response.json();
+      let topics = data.choices[0].message.content.split('\n').filter(function(l) { return l.trim(); }).slice(0, 7);
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      let html = '<strong>Weekly Calendar (' + niche + ')</strong>';
+      for (let i = 0; i < topics.length; i++) {
+        const safeTopic = escapeHtml(topics[i]).replace(/'/g, "\\'");
+        html += '<div class="topic-item" onclick="window.useTopic(\'' + safeTopic + '\')"><div class="topic-day">' + days[i] + '</div><div>' + escapeHtml(topics[i]) + '</div></div>';
+      }
+      output.innerHTML = html;
+    } catch(e) {
+      output.innerHTML = '<div style="color:#ff6b35;">Error: ' + e.message + '</div>';
+    }
+  }
+  document.getElementById('generateTopicsBtn').addEventListener('click', generateTopics);
+
+  window.useTopic = function(topic) {
+    const input = document.getElementById('topic');
+    if (input) {
+      input.value = topic;
+      input.style.border = '2px solid #00c2a8';
+      setTimeout(function() { input.style.border = ''; }, 1000);
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showNotification('Topic added!');
+    }
+  };
+
+  // ============================================================
+  // VOICE STUDIO (upgraded — auto-loads imported script)
+  // ============================================================
+  function openVoiceStudio() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-container">
+        <h2 style="color:#00c2a8; margin-bottom:1rem;">🎙️ Voice Studio</h2>
+        <div class="modal-tabs">
+          <button class="modal-tab active" data-tab="tts">Text-to-Speech</button>
+          <button class="modal-tab" data-tab="record">Voice Recorder</button>
+        </div>
+        <div id="voiceModalContent"></div>
+        <button id="closeVoiceStudio" style="margin-top:1rem;">Close</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const tabs = modal.querySelectorAll('.modal-tab');
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        loadVoiceTab(tab.getAttribute('data-tab'), modal);
+      });
+    });
+
+    function loadVoiceTab(tabId, modalEl) {
+      const content = modalEl.querySelector('#voiceModalContent');
+      if (tabId === 'tts') {
+        // NEW: prefer imported voiceover text if available
+        const savedScript = importedVoiceoverText || localStorage.getItem('voiceoverScript') || '';
+        content.innerHTML = `
+          <textarea id="ttsScript" rows="6" placeholder="Your voiceover script will appear here after importing a script file...">${escapeHtml(savedScript)}</textarea>
+          ${importedVoiceoverText ? '<div style="background:rgba(76,175,80,0.1);border:1px solid #4caf50;border-radius:8px;padding:0.5rem;margin-bottom:0.75rem;font-size:0.8rem;color:#4caf50;">✅ Auto-loaded from imported script: ' + escapeHtml(importedEpisodeTitle) + '</div>' : ''}
+          <select id="ttsVoice" style="width:100%;">
+           <option value="InRyolULHTXjegISsXuJ">Alex - Male - Calm and Steady</option>
+<option value="HjAbwkwspyYo9MhDWD5x">Celeste - Female - Calm and Thoughtful</option>
+          </select>
+          <button id="generateTTSBtn" class="btn-primary" style="width:100%;">🎙️ Generate Voiceover</button>
+          <div id="ttsResult" class="output-area" style="display: none;"></div>
+        `;
+
+        document.getElementById('generateTTSBtn').addEventListener('click', async function() {
+          const script = document.getElementById('ttsScript').value.trim();
+          const voice = document.getElementById('ttsVoice').value;
+          const resultDiv = document.getElementById('ttsResult');
+          if (!script) { alert('Enter a script'); return; }
+          if (!elevenLabsKey) { alert('Enter ElevenLabs API key first'); return; }
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = '<div class="loading"></div> Generating voiceover...';
+          try {
+            const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voice, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'xi-api-key': elevenLabsKey },
+              body: JSON.stringify({ text: script, model_id: 'eleven_turbo_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
+            });
+			
+            if (!response.ok) {
+  const errorText = await response.text();
+  if (errorText.includes('paid_plan_required')) {
+  showNotification('Use ElevenLabs website for Hallie/Sawyer (free plan limitation).');
+  window.open('https://elevenlabs.io/app/speech-synthesis', '_blank');
+  return;
+}
+  throw new Error('TTS generation failed: ' + errorText);
+}
+
+const audioBlob = await response.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const defaultName = importedEpisodeTitle ? importedEpisodeTitle.replace(/[^a-z0-9]/gi, '_').substring(0, 40) + '_voiceover' : 'voiceover_' + Date.now();
+            resultDiv.innerHTML = `
+              <audio controls src="${audioUrl}"></audio>
+              <div class="filename-row">
+                <input type="text" id="ttsFilename" value="${defaultName}">
+                <a href="${audioUrl}" id="ttsDownloadLink" class="btn-primary" style="display:inline-block; text-decoration:none;">💾 Save MP3</a>
+              </div>
+            `;
+            const filenameInput = resultDiv.querySelector('#ttsFilename');
+            const downloadLink = resultDiv.querySelector('#ttsDownloadLink');
+            filenameInput.addEventListener('input', function() { downloadLink.download = filenameInput.value + '.mp3'; });
+            downloadLink.download = defaultName + '.mp3';
+          } catch(e) {
+            resultDiv.innerHTML = '<div style="color:#ff6b35;">Error: ' + e.message + '</div>';
+          }
+        });
+      } else if (tabId === 'record') {
+        content.innerHTML = `
+          <div class="voice-status" id="recordingStatus">Ready to record</div>
+          <button id="startRecordBtn" style="background:#4caf50; color:white; width:100%;">▶ Start Recording</button>
+          <button id="stopRecordBtn" disabled style="width:100%; margin-top:0.5rem;">⏹ Stop Recording</button>
+          <div id="recordingPreview" class="output-area" style="display: none;"></div>
+        `;
+        let mediaRecorderObj = null;
+        let audioChunksArr = [];
+
+        document.getElementById('startRecordBtn').addEventListener('click', async function() {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderObj = new MediaRecorder(stream);
+            audioChunksArr = [];
+            mediaRecorderObj.ondataavailable = function(event) { if (event.data.size > 0) audioChunksArr.push(event.data); };
+            mediaRecorderObj.onstop = function() {
+              const audioBlob = new Blob(audioChunksArr, { type: 'audio/wav' });
+              const audioUrl = URL.createObjectURL(audioBlob);
+              const preview = document.getElementById('recordingPreview');
+              preview.style.display = 'block';
+              preview.innerHTML = `
+                <audio controls src="${audioUrl}"></audio>
+                <div class="filename-row">
+                  <input type="text" id="recFilename" value="recording_${Date.now()}">
+                  <a href="${audioUrl}" id="recDownloadLink" class="btn-primary" style="display:inline-block; text-decoration:none;">💾 Save WAV</a>
+                </div>
+              `;
+              const filenameInput = preview.querySelector('#recFilename');
+              const downloadLink = preview.querySelector('#recDownloadLink');
+              filenameInput.addEventListener('input', function() { downloadLink.download = filenameInput.value + '.wav'; });
+              downloadLink.download = filenameInput.value + '.wav';
+              stream.getTracks().forEach(function(track) { track.stop(); });
+            };
+            mediaRecorderObj.start();
+            document.getElementById('startRecordBtn').disabled = true;
+            document.getElementById('stopRecordBtn').disabled = false;
+            document.getElementById('recordingStatus').innerHTML = '<span class="recording-active">🔴 RECORDING... Speak now!</span>';
+          } catch(error) {
+            document.getElementById('recordingStatus').innerHTML = '<span style="color:#ff6b35;">Microphone access denied</span>';
+          }
+        });
+        document.getElementById('stopRecordBtn').addEventListener('click', function() {
+          if (mediaRecorderObj && mediaRecorderObj.state === 'recording') {
+            mediaRecorderObj.stop();
+            document.getElementById('startRecordBtn').disabled = false;
+            document.getElementById('stopRecordBtn').disabled = true;
+            document.getElementById('recordingStatus').innerHTML = '✅ Recording complete!';
+          }
+        });
+      }
+    }
+
+    loadVoiceTab('tts', modal);
+    document.getElementById('closeVoiceStudio').addEventListener('click', function() { modal.remove(); });
+  }
+
+  document.getElementById('openVoiceStudioBtn').addEventListener('click', openVoiceStudio);
+
+  // ============================================================
+  // THUMBNAIL STUDIO (original)
+  // ============================================================
+  async function generateTitles(topic, style) {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + openAIKey },
+      body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [{ role: 'user', content: 'Generate 5 YouTube titles for a "' + style + '" video about "' + topic + '". Format each as: "1. Title (CTR: X%)" where X is estimated click-through rate.' }], max_tokens: 300 })
+    });
+    const data = await response.json();
+    return data.choices[0].message.content;
+  }
+
+  function parseTitles(response) {
+    const titles = [];
+    const lines = response.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const match = line.match(/^\d+\.\s*(.+?)\s*\(CTR:\s*([\d.]+)%\)/i);
+      if (match) titles.push({ title: match[1].trim(), ctr: match[2] });
+      else if (line.trim() && !line.includes('CTR')) titles.push({ title: line.replace(/^\d+\.\s*/, '').trim(), ctr: Math.floor(Math.random() * 10) + 3 });
+    }
+    return titles;
+  }
+
+  function saveTitleTemplate(title, ctr, topic) {
+    savedTemplates.titles.unshift({ id: Date.now(), title: title, ctr: ctr, topic: topic, date: new Date().toLocaleDateString() });
+    if (savedTemplates.titles.length > 20) savedTemplates.titles.pop();
+    saveTemplates();
+    showNotification('Title saved!');
+  }
+
+  function openThumbnailStudio() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-container">
+        <h2 style="color:#00c2a8; margin-bottom:1rem;">🖼️ Thumbnail Studio</h2>
+        <div class="modal-tabs">
+          <button class="modal-tab active" data-tab="generate">Generate Titles</button>
+          <button class="modal-tab" data-tab="templates">Saved Templates</button>
+        </div>
+        <div id="thumbnailModalContent"></div>
+        <button id="closeThumbnailStudio" style="margin-top:1rem;">Close</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const tabs = modal.querySelectorAll('.modal-tab');
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        loadThumbnailTab(tab.getAttribute('data-tab'), modal);
+      });
+    });
+
+    function loadThumbnailTab(tabId, modalEl) {
+  const content = modalEl.querySelector('#thumbnailModalContent');
+
+  if (tabId === 'generate') {
+    const currentTopic = escapeHtml(document.getElementById('topic').value || '');
+
+    content.innerHTML = `
+      <input type="text" id="titleTopic" placeholder="Video topic" value="${currentTopic}">
+      <select id="titleStyle" style="width:100%; margin-top:0.5rem;">
+        <option value="educational">Educational / How-to</option>
+        <option value="list">List / Top X</option>
+        <option value="storytelling">Storytelling</option>
+        <option value="motivational">Motivational</option>
+      </select>
+      <button id="generateTitlesBtn" class="btn-primary" style="width:100%; margin-top:0.5rem;">Generate Titles</button>
+      <div id="titlesResult"></div>
+    `;
+
+        document.getElementById('generateTitlesBtn').addEventListener('click', async function() {
+          const topic = document.getElementById('titleTopic').value.trim();
+          const style = document.getElementById('titleStyle').value;
+          const resultDiv = document.getElementById('titlesResult');
+          if (!topic) { alert('Enter a topic'); return; }
+          if (!openAIKey) { alert('Enter OpenAI API key first'); return; }
+          resultDiv.innerHTML = '<div class="loading"></div> Generating...';
+          try {
+            const response = await generateTitles(topic, style);
+            const titles = parseTitles(response);
+            let html = '';
+            titles.forEach(function(t, i) {
+  html += '<div class="title-card">' +
+    '<div class="title-text">' + (i + 1) + '. ' + escapeHtml(t.title) + '</div>' +
+    '<div class="title-meta">' +
+      '<span class="ctr-badge">CTR: ' + t.ctr + '%</span>' +
+      '<button class="copy-btn" data-copy-title="' + i + '">Copy</button>' +
+      '<button class="copy-btn" data-save-title="' + i + '">Save</button>' +
+    '</div>' +
+  '</div>';
+});
+
+resultDiv.innerHTML = html;
+
+resultDiv.querySelectorAll('[data-copy-title]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const i = Number(btn.getAttribute('data-copy-title'));
+    window.copyToClipboard(titles[i].title);
+  });
+});
+
+resultDiv.querySelectorAll('[data-save-title]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const i = Number(btn.getAttribute('data-save-title'));
+    window.saveTitleTemplate(titles[i].title, titles[i].ctr, topic);
+  });
+});
+          } catch(e) {
+            resultDiv.innerHTML = '<div style="color:#ff6b35;">Error: ' + e.message + '</div>';
+          }
+        });
+      } else {
+        content.innerHTML = '<div id="templatesList"></div>';
+        const templatesDiv = document.getElementById('templatesList');
+        if (savedTemplates.titles.length === 0) {
+          templatesDiv.innerHTML = '<div style="color:#888; padding:1rem; text-align:center;">No saved titles yet.</div>';
+        } else {
+          let html = '<strong>Saved Titles</strong>';
+
+savedTemplates.titles.forEach(function(t, i) {
+  html += '<div class="title-card">' +
+    '<div class="title-text">' + escapeHtml(t.title) + '</div>' +
+    '<div class="title-meta">' +
+      '<span class="ctr-badge">CTR: ' + t.ctr + '%</span>' +
+      '<button class="copy-btn" data-copy-saved-title="' + i + '">Copy</button>' +
+    '</div>' +
+  '</div>';
+});
+
+templatesDiv.innerHTML = html;
+
+templatesDiv.querySelectorAll('[data-copy-saved-title]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const i = Number(btn.getAttribute('data-copy-saved-title'));
+    window.copyToClipboard(savedTemplates.titles[i].title);
+  });
+});
+      }
+    }
+  }
+
+    loadThumbnailTab('generate', modal);
+    document.getElementById('closeThumbnailStudio').addEventListener('click', function() { modal.remove(); });
+  }
+
+  window.saveTitleTemplate = saveTitleTemplate;
+  document.getElementById('openThumbnailBtn').addEventListener('click', openThumbnailStudio);
+
+  // ============================================================
+  // SCHEDULING CALENDAR (original)
+  // ============================================================
+  let currentCalendarDate = new Date();
+
+  function openSchedulingCalendar() {
+    const modal = document.createElement('div');
+    modal.className = 'calendar-modal';
+    renderCalendarModal(modal);
+    document.body.appendChild(modal);
+  }
+
+function renderCalendarModal(modal) {
+  const year = currentCalendarDate.getFullYear();
+  const month = currentCalendarDate.getMonth();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
+
+  let calendarHtml = '<div class="calendar-container">';
+  calendarHtml += '<div class="calendar-header">';
+  calendarHtml += '<h2 style="color:#00c2a8;">Scheduling Calendar</h2>';
+  calendarHtml += '<div class="calendar-nav">';
+  calendarHtml += '<button id="prevMonth">← Prev</button>';
+  calendarHtml += '<span style="margin:0 1rem;">' + monthNames[month] + ' ' + year + '</span>';
+  calendarHtml += '<button id="nextMonth">Next →</button>';
+  calendarHtml += '<button id="closeCalendar" style="margin-left:1rem;">Close</button>';
+  calendarHtml += '</div></div>';
+
+  calendarHtml += '<div class="calendar-grid">';
+
+  const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  weekdays.forEach(function(day) {
+    calendarHtml += '<div class="calendar-day-header">' + day + '</div>';
+  });
+
+  for (let i = 0; i < firstDay; i++) {
+    calendarHtml += '<div class="calendar-day empty"></div>';
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    const daySchedules = schedules.items.filter(function(s) {
+      return s.date === dateStr;
+    });
+
+    calendarHtml += '<div class="calendar-day">';
+    calendarHtml += '<div class="day-number' + (dateStr === today ? ' today' : '') + '">' + d + '</div>';
+
+    daySchedules.forEach(function(s) {
+      const platformEmojis = (s.platforms || []).map(function(p) {
+        const pl = PLATFORMS.find(function(platform) {
+          return platform.id === p;
+        });
+        return pl ? pl.emoji : '📺';
+      }).join('');
+
+      calendarHtml += '<div class="schedule-item" onclick="window.viewScheduleDetails(' + s.id + ')">';
+      calendarHtml += platformEmojis + ' ' + escapeHtml(s.topic.substring(0, 20));
+      calendarHtml += '</div>';
+    });
+
+    calendarHtml += '<button class="add-schedule-btn" data-add-schedule="' + dateStr + '">+ Add</button>';
+    calendarHtml += '</div>';
+  }
+
+  calendarHtml += '</div>';
+  calendarHtml += '<div class="upcoming-list">';
+  calendarHtml += '<strong>Upcoming Posts</strong>';
+  calendarHtml += '<div id="upcomingList"></div>';
+  calendarHtml += '</div>';
+  calendarHtml += '</div>';
+
+  modal.innerHTML = calendarHtml;
+
+  modal.querySelectorAll('[data-add-schedule]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      window.showAddScheduleModal(btn.getAttribute('data-add-schedule'));
+    });
+  });
+
+  const upcoming = schedules.items
+    .filter(function(s) {
+      return new Date(s.date) >= new Date();
+    })
+    .sort(function(a, b) {
+      return new Date(a.date) - new Date(b.date);
+    })
+    .slice(0, 5);
+
+  const upcomingDiv = modal.querySelector('#upcomingList');
+
+  if (upcomingDiv) {
+    if (upcoming.length === 0) {
+      upcomingDiv.innerHTML = '<div style="color:#888; padding:0.5rem;">No upcoming posts.</div>';
+    } else {
+      let html = '';
+
+      upcoming.forEach(function(s) {
+        const badges = (s.platforms || []).map(function(p) {
+          const pl = PLATFORMS.find(function(platform) {
+            return platform.id === p;
+          });
+          return '<span class="platform-badge">' + (pl ? pl.emoji + ' ' + pl.name : p) + '</span>';
+        }).join('');
+
+        html += '<div class="upcoming-item">';
+        html += '<div><strong>' + escapeHtml(s.topic.substring(0, 40)) + '</strong><br>';
+        html += '<span style="font-size:0.7rem;color:#888;">' + s.date + '</span></div>';
+        html += '<div>' + badges;
+        html += '<button onclick="window.deleteSchedule(' + s.id + ')" style="background:none;border-color:#ff6b35;color:#ff6b35;margin-left:0.5rem;">Delete</button>';
+        html += '</div></div>';
+      });
+
+      upcomingDiv.innerHTML = html;
+    }
+  }
+
+  modal.querySelector('#prevMonth').addEventListener('click', function() {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+    renderCalendarModal(modal);
+  });
+
+  modal.querySelector('#nextMonth').addEventListener('click', function() {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+    renderCalendarModal(modal);
+  });
+
+  modal.querySelector('#closeCalendar').addEventListener('click', function() {
+    modal.remove();
+  });
+}
+
+  window.showAddScheduleModal = function(dateStr) {
+    const publishedScripts = assets.scripts.filter(function(s) { return s.status === 'published'; });
+    if (publishedScripts.length === 0) { alert('No published videos. Move a script to "Published" in the dashboard first!'); return; }
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10001;display:flex;justify-content:center;align-items:center';
+    let platformHtml = '<div class="platform-group">';
+    PLATFORMS.forEach(function(p) { platformHtml += '<label class="platform-checkbox"><input type="checkbox" value="' + p.id + '"> ' + p.emoji + ' ' + p.name + '</label>'; });
+    platformHtml += '</div>';
+    let scriptOptions = '<option value="">Select a video...</option>';
+    publishedScripts.forEach(function(s) { scriptOptions += '<option value="' + s.id + '" data-topic="' + escapeHtml(s.topic) + '">' + escapeHtml(s.topic.substring(0,50)) + '</option>'; });
+    modal.innerHTML = '<div style="background:#0a0a0a;border:1px solid #333;border-radius:24px;padding:1.5rem;width:90%;max-width:500px;"><h3 style="color:#00c2a8;">Schedule for ' + dateStr + '</h3><select id="scheduleScript" style="width:100%;margin:1rem 0;">' + scriptOptions + '</select>' + platformHtml + '<textarea id="scheduleNotes" placeholder="Notes (optional)" rows="2" style="width:100%;"></textarea><div style="display:flex;gap:0.5rem;margin-top:1rem;"><button id="saveSchedule" class="btn-primary">Save</button><button id="cancelSchedule">Cancel</button></div></div>';
+    document.body.appendChild(modal);
+    modal.querySelector('#saveSchedule').addEventListener('click', function() {
+      const select = modal.querySelector('#scheduleScript');
+      const scriptId = parseInt(select.value);
+      const topic = select.options[select.selectedIndex] ? select.options[select.selectedIndex].getAttribute('data-topic') : null;
+      const platforms = Array.from(modal.querySelectorAll('.platform-checkbox input:checked')).map(function(cb) { return cb.value; });
+      const notes = modal.querySelector('#scheduleNotes').value;
+      if (!scriptId || !topic) { alert('Select a video'); return; }
+      if (platforms.length === 0) { alert('Select at least one platform'); return; }
+      schedules.items.push({ id: Date.now(), scriptId: scriptId, topic: topic, date: dateStr, platforms: platforms, notes: notes, createdAt: new Date().toISOString() });
+      saveSchedules();
+	  refreshControlPanel();
+      modal.remove();
+      const calendarModal = document.querySelector('.calendar-modal');
+      if (calendarModal) renderCalendarModal(calendarModal);
+      showNotification('Scheduled!');
+    });
+    modal.querySelector('#cancelSchedule').addEventListener('click', function() { modal.remove(); });
+  };
+  
+  window.viewScheduleDetails = function(id) {
+    const s = schedules.items.find(function(s) { return s.id === id; });
+    if (!s) return;
+    const platformNames = (s.platforms || []).map(function(p) { const pl = PLATFORMS.find(function(pl) { return pl.id === p; }); return pl ? pl.emoji + ' ' + pl.name : p; }).join(', ');
+    alert('Topic: ' + s.topic + '\nDate: ' + s.date + '\nPlatforms: ' + platformNames + (s.notes ? '\nNotes: ' + s.notes : ''));
+  };
+
+  window.deleteSchedule = function(id) {
+    if (confirm('Delete this scheduled post?')) {
+      schedules.items = schedules.items.filter(function(s) { return s.id !== id; });
+      saveSchedules();
+	  refreshControlPanel();
+      const calendarModal = document.querySelector('.calendar-modal');
+      if (calendarModal) renderCalendarModal(calendarModal);
+      showNotification('Deleted');
+    }
+  };
+
+  const calendarBtn = document.getElementById('calendarBtn');
+
+if (calendarBtn) {
+  calendarBtn.addEventListener('click', openSchedulingCalendar);
+} else {
+  console.warn('calendarBtn not found. Make sure your calendar button has id="calendarBtn".');
+}
+
+  // ============================================================
+  // DASHBOARD (original)
+  // ============================================================
+  function renderDashboard() {
+    const columns = [
+      { id: 'draft', title: 'Draft' },
+      { id: 'voice_recorded', title: 'Voice' },
+      { id: 'video_edited', title: 'Edited' },
+      { id: 'published', title: 'Published' }
+    ];
+    const stats = document.getElementById('statsArea');
+    if (stats) {
+      const counts = columns.map(function(c) { return assets.scripts.filter(function(s) { return s.status === c.id; }).length; });
+      stats.innerHTML = '<span>Draft: ' + counts[0] + '</span><span>Voice: ' + counts[1] + '</span><span>Edited: ' + counts[2] + '</span><span>Published: ' + counts[3] + '</span><span>Total: ' + assets.scripts.length + '</span>';
+    }
+    const columnsDiv = document.getElementById('columnsArea');
+    if (!columnsDiv) return;
+    columnsDiv.innerHTML = '';
+    columns.forEach(function(col) {
+      const scripts = assets.scripts.filter(function(s) { return s.status === col.id; });
+      columnsDiv.insertAdjacentHTML('beforeend', '<div class="column"><strong>' + col.title + '</strong> (' + scripts.length + ')<div id="col-' + col.id + '"></div></div>');
+      const container = document.getElementById('col-' + col.id);
+      scripts.forEach(function(script) {
+        const card = document.createElement('div');
+        card.className = 'dashboard-card';
+        const moveButton = col.id !== 'published' ? '<button onclick="window.moveScript(' + script.id + ', \'' + col.id + '\')">Move →</button>' : '';
+        card.innerHTML = '<strong>' + escapeHtml(script.topic) + '</strong><br><span style="color:#888;">' + script.style + '</span><div style="margin-top:0.25rem;"><button onclick="window.viewScript(' + script.id + ')">View</button>' + moveButton + '<button onclick="window.deleteScript(' + script.id + ')">Delete</button><button onclick="window.exportProject(' + script.id + ')" style="border-color:#4caf50;color:#4caf50;">Export</button></div>';
+        container.appendChild(card);
+      });
+    });
+  }
+
+  window.viewScript = function(id) {
+    const script = assets.scripts.find(function(s) { return s.id === id; });
+    if (!script) return;
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:20000;display:flex;justify-content:center;align-items:center';
+    modal.innerHTML = '<div style="background:#0a0a0a;border:1px solid #333;border-radius:24px;padding:1.5rem;width:90%;max-width:600px;max-height:80vh;overflow-y:auto;"><h2 style="color:#00c2a8;">' + escapeHtml(script.topic) + '</h2><div style="color:#888;margin:0.5rem 0;">' + script.style + ' | ' + script.date + '</div><div style="white-space:pre-wrap;background:#1a1a1a;padding:1rem;border-radius:12px;margin:1rem 0;">' + escapeHtml(script.content) + '</div><div style="display:flex;gap:0.5rem;justify-content:flex-end;"><button id="copyFullScriptBtn" class="copy-btn">Copy</button><button id="closeModalBtn" class="btn-primary">Close</button></div></div>';
+    document.body.appendChild(modal);
+    document.getElementById('copyFullScriptBtn').addEventListener('click', function() { window.copyToClipboard(script.content); });
+    document.getElementById('closeModalBtn').addEventListener('click', function() { modal.remove(); });
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+  };
+
+  window.moveScript = function(id, current) {
+    const order = ['draft', 'voice_recorded', 'video_edited', 'published'];
+    const idx = order.indexOf(current);
+    const next = order[idx + 1];
+    if (next) {
+      const script = assets.scripts.find(function(s) { return s.id === id; });
+      if (script) {
+        script.status = next;
+        saveAssets();
+        if (next === 'published') recordPublishedVideo();
+        renderDashboard();
+      }
+    }
+  };
+
+  window.deleteScript = function(id) {
+    if (confirm('Delete this script?')) {
+      assets.scripts = assets.scripts.filter(function(s) { return s.id !== id; });
+      saveAssets();
+      renderDashboard();
+    }
+  };
+
+  window.exportProject = function(id) {
+    const script = assets.scripts.find(function(s) { return s.id === id; });
+    if (!script) return;
+    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), script: script }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = script.topic.replace(/[^a-z0-9]/gi, '_').substring(0, 50) + '_project.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showNotification('Exported!');
+  };
+
+  let dashboardVisible = false;
+  const dashboardBtn = document.getElementById('dashboardBtn');
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener('click', function() {
+      const container = document.getElementById('dashboardContainer');
+      if (!container) return;
+      if (dashboardVisible) {
+        container.classList.remove('visible');
+        container.style.display = 'none';
+        dashboardVisible = false;
+        dashboardBtn.textContent = 'OPEN DASHBOARD';
+      } else {
+        renderDashboard();
+        container.classList.add('visible');
+        container.style.display = 'block';
+        dashboardVisible = true;
+        dashboardBtn.textContent = 'CLOSE DASHBOARD';
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+
+  // ============================================================
+  // PRODUCTION TIMER (original)
+  // ============================================================
+  let timerInterval = null;
+  let timerSeconds = 0;
+  let currentPhase = 'script';
+  let isRunning = false;
+  let phaseTimes = { script: 0, voiceover: 0, video: 0, publish: 0 };
+
+  function loadTimerData() {
+    const saved = localStorage.getItem('facelessTimer');
+    if (saved) {
+      const data = JSON.parse(saved);
+      phaseTimes = data.phaseTimes || { script: 0, voiceover: 0, video: 0, publish: 0 };
+    }
+  }
+  function saveTimerData() { localStorage.setItem('facelessTimer', JSON.stringify({ phaseTimes: phaseTimes, productionData: productionData })); }
+  function formatTime(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); }
+
+  function updateAllDisplays() {
+    ['currentTimer','scriptTime','voiceTime','videoTime','publishTime'].forEach(function(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (id === 'currentTimer') el.textContent = formatTime(timerSeconds);
+      else if (id === 'scriptTime') el.textContent = formatTime(phaseTimes.script);
+      else if (id === 'voiceTime') el.textContent = formatTime(phaseTimes.voiceover);
+      else if (id === 'videoTime') el.textContent = formatTime(phaseTimes.video);
+      else if (id === 'publishTime') el.textContent = formatTime(phaseTimes.publish);
+    });
+    const totalEl = document.getElementById('totalTime');
+    if (totalEl) totalEl.textContent = formatTime(phaseTimes.script + phaseTimes.voiceover + phaseTimes.video + phaseTimes.publish);
+  }
+
+  function openProductionTimer() {
+    loadTimerData();
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.98);z-index:200000;display:flex;justify-content:center;align-items:center';
+    modal.innerHTML = `
+      <div style="background:#0a0a0a;border:1px solid #00c2a8;border-radius:24px;padding:1.5rem;width:90%;max-width:600px;max-height:85vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h2 style="color:#00c2a8;">⏱️ Production Timer</h2>
+          <button id="closeTimerBtn">Close</button>
+        </div>
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <div style="font-size:3rem;font-family:monospace;color:#00c2a8;" id="currentTimer">00:00:00</div>
+          <div style="color:#888;">Current Session</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+          <button class="phase-btn" data-phase="script" style="flex:1;background:#00c2a8;color:#0a0a0a;">✍️ Script</button>
+          <button class="phase-btn" data-phase="voiceover" style="flex:1;">🎙️ Voiceover</button>
+          <button class="phase-btn" data-phase="video" style="flex:1;">🎬 Video</button>
+          <button class="phase-btn" data-phase="publish" style="flex:1;">📢 Publish</button>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;">
+          <button id="startTimerBtn" style="background:#4caf50;color:white;border:none;flex:1;padding:0.6rem;">▶ Start</button>
+          <button id="pauseTimerBtn" style="background:#ff9800;color:white;border:none;flex:1;padding:0.6rem;">⏸ Pause</button>
+          <button id="resetTimerBtn" style="background:#f44336;color:white;border:none;flex:1;padding:0.6rem;">⟳ Reset</button>
+          <button id="saveTimerBtn" style="background:#00c2a8;color:#0a0a0a;border:none;flex:1;padding:0.6rem;">💾 Save</button>
+        </div>
+        <div style="background:#1a1a1a;border-radius:12px;padding:1rem;margin-bottom:1rem;">
+          <h3 style="color:#00c2a8;margin-bottom:0.5rem;">📊 Phase Totals</h3>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.5rem;">
+            <div>✍️ Script: <span id="scriptTime" style="color:#00c2a8;">00:00:00</span></div>
+            <div>🎙️ Voiceover: <span id="voiceTime" style="color:#00c2a8;">00:00:00</span></div>
+            <div>🎬 Video: <span id="videoTime" style="color:#00c2a8;">00:00:00</span></div>
+            <div>📢 Publish: <span id="publishTime" style="color:#00c2a8;">00:00:00</span></div>
+          </div>
+          <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #333;"><strong>Total: <span id="totalTime" style="color:#00c2a8;">00:00:00</span></strong></div>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <button id="resetAllBtn" style="flex:1;border-color:#ff6b35;color:#ff6b35;">⟳ Reset All</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    updateAllDisplays();
+
+    modal.querySelectorAll('.phase-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        currentPhase = btn.getAttribute('data-phase');
+        modal.querySelectorAll('.phase-btn').forEach(function(b) { b.style.background = '#1e1e1e'; b.style.color = '#00c2a8'; });
+        btn.style.background = '#00c2a8';
+        btn.style.color = '#0a0a0a';
+      });
+    });
+
+    document.getElementById('startTimerBtn').onclick = function() {
+      if (isRunning) return;
+      isRunning = true;
+      timerInterval = setInterval(function() { timerSeconds++; updateAllDisplays(); }, 1000);
+    };
+    document.getElementById('pauseTimerBtn').onclick = function() {
+      isRunning = false;
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    };
+    document.getElementById('resetTimerBtn').onclick = function() {
+      isRunning = false;
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      timerSeconds = 0;
+      updateAllDisplays();
+    };
+    document.getElementById('saveTimerBtn').onclick = function() {
+      if (timerSeconds === 0) { alert('Start the timer first!'); return; }
+      phaseTimes[currentPhase] += timerSeconds;
+      timerSeconds = 0;
+      saveTimerData();
+      updateAllDisplays();
+      showNotification('Saved to ' + currentPhase + ' phase!');
+    };
+    document.getElementById('resetAllBtn').onclick = function() {
+      if (confirm('Reset ALL phase times?')) {
+        phaseTimes = { script: 0, voiceover: 0, video: 0, publish: 0 };
+        timerSeconds = 0;
+        saveTimerData();
+        updateAllDisplays();
+      }
+    };
+    document.getElementById('closeTimerBtn').onclick = function() {
+      if (timerInterval) clearInterval(timerInterval);
+      isRunning = false;
+      modal.remove();
+    };
+  }
+
+  const timerBtn = document.getElementById('timerBtn');
+  if (timerBtn) {
+    timerBtn.addEventListener('click', function() {
+      openProductionTimer();
+    });
+  }
+
+function getDateOffset(days) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split('T')[0];
+}
+
+// ============================================================
+// CONTROL PANEL
+// ============================================================
+function renderControlPanel() {
+  let panel = document.getElementById('controlPanel');
+
+  if (!panel) {
+    panel = document.createElement('section');
+    panel.id = 'controlPanel';
+    document.body.insertBefore(panel, document.body.firstChild);
+  }
+
+  const today = getDateOffset(0);
+  const tomorrow = getDateOffset(1);
+
+  const draftCount = assets.scripts.filter(function(s) { return s.status === 'draft'; }).length;
+  const voiceCount = assets.scripts.filter(function(s) { return s.status === 'voice_recorded'; }).length;
+  const editedCount = assets.scripts.filter(function(s) { return s.status === 'video_edited'; }).length;
+  const publishedCount = assets.scripts.filter(function(s) { return s.status === 'published'; }).length;
+
+  const scheduledToday = schedules.items.filter(function(s) {
+    return s.date === today;
+  });
+
+  const scheduledTomorrow = schedules.items.filter(function(s) {
+    return s.date === tomorrow;
+  });
+
+  const upcoming = schedules.items
+    .filter(function(s) { return new Date(s.date) >= new Date(); })
+    .sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
+    .slice(0, 5);
+
+  let alertLevel = 'good';
+let nextAction = 'You are balanced. Keep building.';
+let highlight = null;
+
+if (scheduledTomorrow.length === 0 && editedCount > 0) {
+  alertLevel = 'danger';
+  nextAction = 'Streak risk: nothing scheduled for tomorrow.';
+  highlight = 'cp-edited';
+}
+else if (draftCount > 3) {
+  alertLevel = 'warn';
+  nextAction = 'You have several drafts waiting. Record voiceovers next.';
+  highlight = 'cp-draft';
+}
+else if (voiceCount > 2) {
+  alertLevel = 'warn';
+  nextAction = 'You have voiceovers ready. Move into editing.';
+  highlight = 'cp-voice';
+}
+else if (editedCount > 0 && scheduledToday.length === 0) {
+  alertLevel = 'danger';
+  nextAction = 'You have finished videos, but nothing scheduled today.';
+  highlight = 'cp-edited';
+}
+else if (scheduledToday.length === 0) {
+  alertLevel = 'warn';
+  nextAction = 'Nothing scheduled today. Add something to your calendar.';
+}
+
+  let upcomingHtml = '';
+  if (upcoming.length === 0) {
+    upcomingHtml = '<div class="cp-empty">No upcoming posts scheduled.</div>';
+  } else {
+    upcoming.forEach(function(item) {
+      upcomingHtml += '<div class="cp-schedule-item">';
+      upcomingHtml += '<strong>' + escapeHtml(item.topic.substring(0, 42)) + '</strong>';
+      upcomingHtml += '<span>' + item.date + '</span>';
+      upcomingHtml += '</div>';
+    });
+  }
+
+panel.innerHTML = `
+    <div class="cp-shell cp-alert-${alertLevel}">
+      <div class="cp-top">
+        <div>
+          <div class="cp-kicker">Build It Anyway</div>
+          <h1>Production Control Panel</h1>
+          <p class="cp-alert-text-${alertLevel}">${nextAction}</p>
+<div id="cp-actionArea"></div>
+        </div>
+        <div class="cp-today-card">
+          <span>Today</span>
+          <strong>${today}</strong>
+          <small>${scheduledToday.length} scheduled today</small>
+        </div>
+      </div>
+
+      <div class="cp-grid">
+        <div class="cp-card cp-wide">
+          <h2>Pipeline Snapshot</h2>
+          <div class="cp-stats">
+  <div id="cp-draft"><strong>${draftCount}</strong><span>Draft</span></div>
+  <div id="cp-voice"><strong>${voiceCount}</strong><span>Voice</span></div>
+  <div id="cp-edited"><strong>${editedCount}</strong><span>Edited</span></div>
+  <div id="cp-published"><strong>${publishedCount}</strong><span>Published</span></div>
+</div>
+</div>
+
+        <div class="cp-card">
+          <h2>Quick Actions</h2>
+          <div class="cp-actions">
+            <button data-cp-click="generateBtn">New Script</button>
+            <button data-cp-click="dashboardBtn">Dashboard</button>
+            <button data-cp-click="calendarBtn">Calendar</button>
+            <button data-cp-click="timerBtn">Timer</button>
+            <button data-cp-click="openVoiceStudioBtn">Voice Studio</button>
+            <button data-cp-click="openThumbnailBtn">Thumbnail Studio</button>
+			<button data-cp-click="subtitleBtn">Generate Subtitles</button>
+			<button data-cp-click="downloadSRTBtn">Download .SRT</button>
+			<button data-cp-click="imageSyncBtn">Create Image Sync List</button>
+			<button data-cp-click="capcutTimingBtn">CapCut Timing</button>
+			<button data-cp-click="batchProcessBtn">Batch Process Videos</button>
+			<button data-cp-click="batchCapCutBtn">Batch CapCut Scripts</button>
+			<button data-cp-click="batchSRTBtn">Download Batch SRTs</button>
+			<button data-cp-click="runSingleVideoBtn">Run Video 1 (Clean)</button>	
+			<button data-cp-click="runFullPipelineBtn">🚀 Run Full Pipeline</button>
+			<button data-cp-click="generateImagesBtn">Generate Images</button>
+          </div>
+        </div>
+
+        <div class="cp-card">
+          <h2>Upcoming Posts</h2>
+          ${upcomingHtml}
+        </div>
+
+                <div class="cp-card">
+          <h2>Momentum</h2>
+          <div class="cp-momentum">
+            <div><span>Current streak</span><strong>${productionData.streak || 0}</strong></div>
+            <div><span>Longest streak</span><strong>${productionData.longestStreak || 0}</strong></div>
+            <div><span>Total scripts</span><strong>${assets.scripts.length}</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <section class="console-shell">
+  <div class="console-header">
+    <div>
+      <div class="console-kicker">BUILD IT ANYWAY</div>
+      <h2>Production Control Console</h2>
+    </div>
+    <div class="console-status">
+  <span class="status-dot" id="statusDot"></span>
+  <span id="statusText">SYSTEM READY</span>
+</div>
+  </div>
+
+  <div class="console-grid">
+    <div class="console-module">
+      <h3>Script Ops</h3>
+      <button data-cp-click="generateBtn">Generate Script</button>
+      <button data-cp-click="runSingleVideoBtn">Run Video 1 Clean</button>
+      <button data-cp-click="batchProcessBtn">Batch Process</button>
+    </div>
+
+    <div class="console-module">
+      <h3>Video Ops</h3>
+      <button data-cp-click="subtitleBtn">Generate Subtitles</button>
+      <button data-cp-click="downloadSRTBtn">Download SRT</button>
+      <button data-cp-click="imageSyncBtn">Image Plan</button>
+      <button data-cp-click="capcutTimingBtn">CapCut Timing</button>
+    </div>
+
+    <div class="console-module">
+      <h3>Export Ops</h3>
+      <button data-cp-click="batchSRTBtn">Batch SRT Export</button>
+    </div>
+  </div>
+
+  <div class="console-output-wrap">
+    <div class="console-output-title">Main Output Screen</div>
+    <textarea id="consoleOutput" class="console-output" placeholder="Console output will appear here..."></textarea>
+  </div>
+</section>
+		
+      </div>
+    </div>
+  `;
+
+  const actionArea = panel.querySelector('#cp-actionArea');
+
+if (actionArea) {
+let btnHtml = '';
+
+  if (scheduledTomorrow.length === 0 && editedCount > 0) {
+    btnHtml = '<button id="cpProtectStreak">Protect Streak: Schedule Tomorrow</button>';
+  } else if (draftCount > 3) {
+    btnHtml = '<button id="cpFixDrafts">Fix Draft</button>';
+  } else if (voiceCount > 2) {
+    btnHtml = '<button id="cpFixVoice">Fix Voice</button>';
+  } else if (editedCount > 0 && scheduledToday.length === 0) {
+    btnHtml = '<button id="cpAutoSchedule">Auto-Schedule Next Video</button>';
+  } else if (scheduledToday.length === 0) {
+    btnHtml = '<button id="cpOpenCalendar">Open Calendar</button>';
+  }
+
+  actionArea.innerHTML = btnHtml;
+}
+
+  panel.querySelectorAll('[data-cp-click]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const action = btn.getAttribute('data-cp-click');
+
+    if (action === 'generateBtn') {
+      handleGenerateScript();
+      return;
+    }
+
+    if (action === 'subtitleBtn') {
+      handleGenerateSubtitles();
+      return;
+    }
+
+    if (action === 'downloadSRTBtn') {
+      const subtitleText = window.generatedSubtitleText || '';
+
+      if (!subtitleText.trim()) {
+        showNotification('No subtitles found. Generate subtitles first.');
+        return;
+      }
+
+      downloadSRTFromSubtitleText(subtitleText);
+      writeConsoleOutput(subtitleText);
+      showNotification('.SRT downloaded!');
+      return;
+    }
+	if (action === 'runFullPipelineBtn') {
+  setConsoleStatus('running');
+
+  const script = latestGeneratedScript || importedVoiceoverText || '';
+
+  if (!script.trim()) {
+    showNotification('No script found.');
+    setConsoleStatus('ready');
+    return;
+  }
+
+  // 1. Generate subtitles
+  const subs = generateSubtitles(script, 0);
+  window.generatedSubtitleText = subs;
+
+  // 2. Generate image plan
+  const imagePlan = generateImageSyncFromSubtitleText(subs);
+
+  // 3. Generate CapCut script
+  const capcut = generateCapCutTiming(subs);
+
+  // 4. Download SRT
+  downloadSRTFromSubtitleText(subs);
+
+  // 5. Output everything
+  const fullOutput = [
+    '=== SUBTITLES =====================',
+    '',
+    subs,
+    '',
+    '=== IMAGE PLAN ====================',
+    '',
+    imagePlan,
+    '',
+    '=== CAPCUT SCRIPT =================',
+    '',
+    capcut
+  ].join('\n');
+
+  writeConsoleOutput(fullOutput);
+
+  showNotification('Full pipeline complete!');
+  setConsoleStatus('ready');
+
+  return;
+}
+
+if (action === 'generateImagesBtn') {
+  setConsoleStatus('running');
+
+  const subtitleText = window.generatedSubtitleText || '';
+
+  if (!subtitleText.trim()) {
+    showNotification('Generate subtitles first.');
+    setConsoleStatus('ready');
+    return;
+  }
+
+  generateImagesFromSubtitleText(subtitleText).then(function(result) {
+    writeConsoleOutput(result);
+    showNotification('Image generation complete!');
+    setConsoleStatus('ready');
+  });
+
+  return;
+}
+
+    if (action === 'imageSyncBtn') {
+      const subtitleText = window.generatedSubtitleText || '';
+      const imageSyncText = generateImageSyncFromSubtitleText(subtitleText);
+
+      writeConsoleOutput(imageSyncText);
+      showNotification('Image sync list created!');
+      return;
+    }
+
+    if (action === 'capcutTimingBtn') {
+  const subtitleText = window.generatedSubtitleText || '';
+  const timing = generateCapCutTiming(subtitleText);
+
+  writeConsoleOutput(timing);
+  showNotification('CapCut script ready + copied!');
+  return;
+}
+
+    if (action === 'runSingleVideoBtn') {
+      setConsoleStatus('running');
+
+      const script = latestGeneratedScript || importedVoiceoverText || '';
+
+      if (!script.trim()) {
+        showNotification('No script found.');
+        setConsoleStatus('ready');
+        return;
+      }
+
+      const subs = generateSubtitles(script, 0);
+      window.generatedSubtitleText = subs;
+
+      const sync = generateImageSyncFromSubtitleText(subs);
+      const timing = generateCapCutTiming(subs);
+
+      const cleanOutput = [
+        '=== SUBTITLES =====================',
+        '',
+        subs,
+        '',
+        '=== IMAGE PLAN ====================',
+        '',
+        sync,
+        '',
+        '=== TIMING ========================',
+        '',
+        timing
+      ].join('\n');
+
+      writeConsoleOutput(cleanOutput);
+
+      showNotification('Video 1 ready!');
+      setConsoleStatus('ready');
+      return;
+    }
+
+    if (action === 'batchProcessBtn') {
+      const input = latestGeneratedScript || importedVoiceoverText || '';
+
+      if (!input.trim()) {
+        showNotification('No script input found.');
+        return;
+      }
+
+      const result = processBatchSubtitles(input);
+
+      writeConsoleOutput(result);
+      showNotification('Batch processing complete!');
+      return;
+    }
+
+if (action === 'batchCapCutBtn') {
+  const input = latestGeneratedScript || importedVoiceoverText || '';
+
+  if (!input.trim()) {
+    showNotification('No batch script input found.');
+    return;
+  }
+
+  const result = processBatchCapCut(input);
+
+  writeConsoleOutput(result);
+  showNotification('Batch CapCut scripts ready!');
+  return;
+}
+
+    if (action === 'batchSRTBtn') {
+      const input = latestGeneratedScript || importedVoiceoverText || '';
+
+      if (!input.trim()) {
+        showNotification('No batch script input found.');
+        return;
+      }
+
+      downloadBatchSRTFiles(input);
+      return;
+    }
+
+    if (action === 'clearConsoleBtn') {
+      writeConsoleOutput('');
+      return;
+    }
+
+    const target = document.getElementById(action);
+
+    if (target) {
+      target.click();
+    } else {
+      showNotification('That tool is not available yet.');
+   }
+  });
+});
+  
+  const fixDraftBtn = panel.querySelector('#cpFixDrafts');
+  
+  if (fixDraftBtn) {
+    fixDraftBtn.addEventListener('click', function() {
+      const draft = assets.scripts.find(function(s) {
+        return s.status === 'draft';
+      });
+
+      if (draft) {
+        draft.status = 'voice_recorded';
+        saveAssets();
+        renderDashboard();
+        refreshControlPanel();
+      }
+    });
+  }
+
+    const fixVoiceBtn = panel.querySelector('#cpFixVoice');
+	
+  if (fixVoiceBtn) {
+  fixVoiceBtn.addEventListener('click', function() {
+    const item = assets.scripts.find(function(s) {
+      return s.status === 'voice_recorded';
+    });
+
+    if (item) {
+      item.status = 'video_edited';
+      saveAssets();
+      renderDashboard();
+      refreshControlPanel();
+    }
+  });
+}
+
+const autoScheduleBtn = panel.querySelector('#cpAutoSchedule');
+if (autoScheduleBtn) {
+  autoScheduleBtn.addEventListener('click', function() {
+    autoScheduleNextVideo();
+  });
+}
+
+const protectStreakBtn = panel.querySelector('#cpProtectStreak');
+if (protectStreakBtn) {
+  protectStreakBtn.addEventListener('click', function() {
+    autoScheduleNextVideo();
+  });
+}
+
+const openCalendarBtn = panel.querySelector('#cpOpenCalendar');
+if (openCalendarBtn) {
+  openCalendarBtn.addEventListener('click', function() {
+    const calendarBtn = document.getElementById('calendarBtn');
+
+    if (calendarBtn) {
+      calendarBtn.click();
+    } else {
+      showNotification('Calendar tool is not available yet.');
+    }
+  });
+}
+
+}
+
+function refreshControlPanel() {
+  renderControlPanel();
+
+  const panel = document.getElementById('controlPanel');
+  if (!panel) return;
+
+  panel.classList.remove('cp-flash');
+  void panel.offsetWidth;
+  panel.classList.add('cp-flash');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function handleGenerateScript() {
+  const topic = prompt('Enter your topic:');
+
+  if (!topic) return;
+
+  const script = normalizeScript(generateScript(topic));
+  latestGeneratedScript = script;
+
+  const input = document.getElementById('scriptInput');
+
+  if (input) {
+    input.value = script;
+  }
+
+  writeConsoleOutput(script);
+  showNotification('Script generated!');
+}
+
+function handleGenerateSubtitles() {
+  let script = latestGeneratedScript || importedVoiceoverText || '';
+  script = script.trim();
+
+  if (!script) {
+    showNotification('No script found. Generate a script first.');
+    return;
+  }
+
+  const subs = generateSubtitles(script, 0);
+
+  window.generatedSubtitleText = subs;
+  writeConsoleOutput(subs);
+
+  showNotification('Subtitles generated!');
+}
+
+function generateScript(topic) {
+  if (!topic) return '';
+
+  const hooks = [
+    "Most people get this wrong.",
+    "Nobody talks about this.",
+    "This will change how you think.",
+    "Here’s the truth most people miss."
+  ];
+
+  const bodies = [
+    "They assume the obvious path is the right one.",
+    "But the reality is much different than it looks.",
+    "The real shift happens when you stop overthinking it.",
+    "Progress comes from doing, not waiting."
+  ];
+
+  const endings = [
+    "So just start.",
+    "Build it anyway.",
+    "That’s where everything changes.",
+    "That’s how you move forward."
+  ];
+
+  const hook = hooks[Math.floor(Math.random() * hooks.length)];
+  const body = bodies[Math.floor(Math.random() * bodies.length)];
+  const end = endings[Math.floor(Math.random() * endings.length)];
+
+  return `
+${hook}
+${body}
+${topic}.
+${end}
+`.trim();
+}
+
+function normalizeScript(script) {
+  return script
+    .split(/\n+/)
+    .map(function(s) { return s.trim(); })
+    .filter(function(s) { return s.length > 0; })
+    .join('\n');
+}
+
+function generateSubtitles(script, startSeconds) {
+  const sentences = script
+    .replace(/\n/g, ' ')
+    .match(/[^.!?]+[.!?]*/g) || [];
+
+  let current = startSeconds || 0;
+  const cps = 14;
+  
+  function fmt(t) {
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    return m + ':' + (s < 10 ? '0' + s : s);
+  }
+
+  let output = '';
+
+  sentences.forEach(function(sentence) {
+    const trimmed = sentence.trim();
+    if (!trimmed) return;
+
+    const duration = Math.max(1.2, trimmed.length / cps);
+    const start = current;
+    const end = current + duration;
+
+    output += `[${fmt(start)}–${fmt(end)}] ${trimmed}\n`;
+
+    current = end + 0.25;
+  });
+
+  return output;
+}
+
+function downloadTextFile(content, filename) {
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// SRT EXPORT
+// ============================================================
+function downloadSRTFromSubtitleText(subtitleText) {
+  if (!subtitleText || !subtitleText.trim()) {
+    alert("No subtitles available. Generate subtitles first.");
+    return;
+  }
+
+  function toSRTTime(timeText) {
+    const parts = timeText.split(":");
+    const minutes = Number(parts[0]);
+    const seconds = Number(parts[1]);
+    const totalSeconds = minutes * 60 + seconds;
+
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = Math.floor(totalSeconds % 60);
+
+    return (
+      String(h).padStart(2, "0") + ":" +
+      String(m).padStart(2, "0") + ":" +
+      String(s).padStart(2, "0") + ",000"
+    );
+  }
+
+  const lines = subtitleText
+    .split("\n")
+    .map(function(line) { return line.trim(); })
+    .filter(function(line) { return line.length > 0; });
+
+  let srt = "";
+
+  lines.forEach(function(line, index) {
+    const match = line.match(/^\[(\d+:\d+)–(\d+:\d+)\]\s*(.*)$/);
+
+    if (!match) return;
+
+    const start = toSRTTime(match[1]);
+    const end = toSRTTime(match[2]);
+    const text = match[3];
+
+    srt += (index + 1) + "\n";
+    srt += start + " --> " + end + "\n";
+    srt += text + "\n\n";
+  });
+
+  const blob = new Blob([srt], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "build-it-anyway-subtitles.srt";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// IMAGE SYNC + SCENE PROMPTS
+// ============================================================
+function generateImageSyncFromSubtitleText(subtitleText) {
+  if (!subtitleText || !subtitleText.trim()) {
+    return 'No subtitles found. Generate subtitles first.';
+  }
+
+  const lines = subtitleText
+    .split("\n")
+    .map(function(line) { return line.trim(); })
+    .filter(function(line) { return line.length > 0; });
+
+  let output = '';
+  let imageNumber = 1;
+
+  lines.forEach(function(line) {
+    const match = line.match(/^\[(\d+:\d+)–(\d+:\d+)\]\s*(.*)$/);
+    if (!match) return;
+
+    const start = match[1];
+    const end = match[2];
+    const text = match[3];
+
+    const prompt = buildScenePrompt(text, imageNumber);
+
+    output += 'IMAGE ' + imageNumber + ': ' + start + '–' + end + '\n';
+    output += 'Caption: ' + text + '\n';
+    output += 'Prompt: ' + prompt + '\n\n';
+
+    imageNumber++;
+  });
+
+  return output;
+}
+
+function buildScenePrompt(text, index) {
+  const identity = getVisualIdentity();
+
+  let scene = '';
+
+  if (/think|believe|assume/i.test(text)) {
+    scene = "person sitting at desk, thinking quietly, reflective mood";
+  } else if (/not|wrong|mistake/i.test(text)) {
+    scene = "same person pausing, slight confusion, subtle shift in expression";
+  } else if (/build|create|start/i.test(text)) {
+    scene = "same person working, typing or sketching, focused";
+  } else if (/success|result|growth/i.test(text)) {
+    scene = "same person relaxed, slight smile, progress visible on screen";
+  } else {
+    scene = "same person in workspace, calm neutral action";
+  }
+
+  return `
+${scene},
+${getCameraDirection(index)},
+${identity.character},
+${identity.environment},
+${identity.style},
+same character throughout the series,
+consistent facial features,
+consistent clothing,
+no text, no captions, no logos
+`.replace(/\n/g, ' ');
+
+function getVisualIdentity() {
+  return {
+    character: "mid-30s creator, casual clothing, neutral tones, modern workspace",
+    environment: "clean modern home office, soft natural light, minimal desk setup",
+    style: "cinematic, soft lighting, shallow depth of field, consistent color tone"
+  };
+}
+
+function getCameraDirection(index) {
+  const shots = [
+    "medium shot, eye level",
+    "close-up shot, emotional reaction",
+    "over-the-shoulder shot, looking at workspace",
+    "wide shot, showing desk and room",
+    "medium close-up, focused expression"
+  ];
+
+  return shots[(index - 1) % shots.length];
+}
+
+function generateCapCutTiming(subtitleText, index) {
+  if (!subtitleText || !subtitleText.trim()) {
+    return 'No subtitles found. Generate subtitles first.';
+  }
+
+  const lines = subtitleText
+    .split("\n")
+    .map(function(line) { return line.trim(); })
+    .filter(function(line) { return line.length > 0; });
+
+  let output = '=== CAPCUT EDIT SCRIPT ===\n\n';
+  let details = '\n--- DETAILS ---\n\n';
+
+  lines.forEach(function(line, i) {
+    const match = line.match(/^\[(\d+:\d+)–(\d+:\d+)\]\s*(.*)$/);
+    if (!match) return;
+
+    const start = match[1];
+    const end = match[2];
+    const text = match[3];
+
+    output += 'CUT ' + (i + 1) + ' → ' + start + '\n';
+
+    details += '[' + start + '–' + end + '] Image ' + (i + 1) + '\n';
+    details += 'Text: ' + text + '\n\n';
+  });
+
+  const full = output + details;
+
+  // auto copy
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(full).catch(function() {});
+  }
+
+  // download
+  const name = 'capcut-script-' + (index || 1);
+  downloadTextFile(full, name + '.txt');
+
+  return full;
+}
+
+function downloadBase64Image(b64, filename) {
+  const a = document.createElement("a");
+  a.href = "data:image/png;base64," + b64;
+  a.download = filename;
+  a.click();
+}
+
+async function generateImagesFromSubtitleText(subtitleText) {
+  if (!subtitleText || !subtitleText.trim()) {
+    return 'No subtitles found. Generate subtitles first.';
+  }
+
+  if (!openAIKey) {
+    return 'No OpenAI key saved. Image prompts can be created, but images cannot be generated yet.';
+  }
+
+  const lines = subtitleText
+    .split("\n")
+    .map(function(line) { return line.trim(); })
+    .filter(function(line) { return line.length > 0; });
+
+  let output = '=== AUTO IMAGE GENERATION ===\n\n';
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(/^\[(\d+:\d+)–(\d+:\d+)\]\s*(.*)$/);
+    if (!match) continue;
+
+    const text = match[3];
+    const prompt = buildScenePrompt(text, i + 1);
+
+    output += 'Generating Image ' + (i + 1) + '...\n';
+    writeConsoleOutput(output);
+
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + openAIKey
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1',
+        prompt: prompt,
+        size: '1024x1024',
+        quality: 'low',
+        n: 1
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      output += 'Image ' + (i + 1) + ' failed: ' + (data.error && data.error.message ? data.error.message : 'Unknown error') + '\n\n';
+      continue;
+    }
+
+    const b64 = data.data[0].b64_json;
+    downloadBase64Image(b64, 'build-it-anyway-image-' + (i + 1) + '.png');
+
+    output += 'Image ' + (i + 1) + ' downloaded.\n';
+    output += 'Prompt: ' + prompt + '\n\n';
+  }
+
+  return output;
+}
+
+function processBatchCapCut(input) {
+  const scripts = input
+    .split('---')
+    .map(function(s) { return s.trim(); })
+    .filter(function(s) { return s.length > 0; });
+
+  if (!scripts.length) {
+    return 'No scripts found.';
+  }
+
+  let output = '';
+
+  scripts.forEach(function(script, index) {
+    const subs = generateSubtitles(script, 0);
+    const timing = generateCapCutTiming(subs, index + 1);
+
+    output += '====================\n';
+    output += 'VIDEO ' + (index + 1) + '\n';
+    output += '====================\n\n';
+    output += timing + '\n\n';
+  });
+
+  return output;
+}
+
+// ============================================================
+// BATCH MODE — SPLIT SCRIPTS
+// ============================================================
+function splitBatchScripts(input) {
+  return input
+    .split('---')
+    .map(function(s) { return s.trim(); })
+    .filter(function(s) { return s.length > 0; });
+}
+
+function processBatchSubtitles(input) {
+  const scripts = splitBatchScripts(input);
+
+  if (!scripts.length) {
+    return 'No scripts found.';
+  }
+
+  let output = '';
+
+  scripts.forEach(function(script, index) {
+    const subs = generateSubtitles(script, 0);
+    const sync = generateImageSyncFromSubtitleText(subs);
+
+    output += '====================\n';
+    output += 'VIDEO ' + (index + 1) + '\n';
+    output += '====================\n\n';
+
+    output += sync + '\n';
+  });
+
+  return output;
+}
+
+// ============================================================
+// BATCH SRT EXPORT
+// ============================================================
+function downloadBatchSRTFiles(input) {
+  const scripts = splitBatchScripts(input);
+
+  if (!scripts.length) {
+    showNotification('No batch scripts found.');
+    return;
+  }
+
+  scripts.forEach(function(script, index) {
+    const subs = generateSubtitles(script, 0);
+    downloadSRTFromSubtitleTextWithName(
+      subs,
+      'build-it-anyway-video-' + (index + 1) + '.srt'
+    );
+  });
+
+  showNotification('Batch SRT files downloaded!');
+}
+
+function downloadSRTFromSubtitleTextWithName(subtitleText, filename) {
+  if (!subtitleText || !subtitleText.trim()) {
+    return;
+  }
+
+  function toSRTTime(timeText) {
+    const parts = timeText.split(":");
+    const minutes = Number(parts[0]);
+    const seconds = Number(parts[1]);
+    const totalSeconds = minutes * 60 + seconds;
+
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = Math.floor(totalSeconds % 60);
+
+    return (
+      String(h).padStart(2, "0") + ":" +
+      String(m).padStart(2, "0") + ":" +
+      String(s).padStart(2, "0") + ",000"
+    );
+  }
+
+  const lines = subtitleText
+    .split("\n")
+    .map(function(line) { return line.trim(); })
+    .filter(function(line) { return line.length > 0; });
+
+  let srt = "";
+
+  lines.forEach(function(line, index) {
+    const match = line.match(/^\[(\d+:\d+)–(\d+:\d+)\]\s*(.*)$/);
+    if (!match) return;
+
+    srt += (index + 1) + "\n";
+    srt += toSRTTime(match[1]) + " --> " + toSRTTime(match[2]) + "\n";
+    srt += match[3] + "\n\n";
+  });
+
+  const blob = new Blob([srt], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function writeConsoleOutput(text) {
+  const box = document.getElementById('consoleOutput');
+
+  if (!box) {
+    console.log(text);
+    return;
+  }
+
+  box.value = text;
+  box.scrollTop = box.scrollHeight; // 👈 always show latest
+}
+
+function setConsoleStatus(state) {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+
+  if (!dot || !text) return;
+
+  if (state === 'running') {
+    dot.style.background = '#facc15';
+    dot.style.boxShadow = '0 0 12px #facc15';
+    text.textContent = 'RUNNING...';
+  } else {
+    dot.style.background = '#22c55e';
+    dot.style.boxShadow = '0 0 12px #22c55e';
+    text.textContent = 'SYSTEM READY';
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadAssets();
+loadTemplates();
+loadSchedules();
+loadProductionData();
+updateKeyStatus();
+renderControlPanel();
+
+}
+</script>
+</body>
+</html>
